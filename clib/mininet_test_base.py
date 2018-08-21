@@ -733,6 +733,20 @@ dbs:
                         del match[new_match]
             return match
 
+        def normalize_match_value_format(match_value):
+            """Remove mask from match value if it doesn't have any zero"""
+            if isinstance(match_value, str):
+                if "/ff:ff:ff:ff:ff:ff" in match_value or \
+                   "/255.255.255.255" in match_value or   \
+                   "/ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff" in match_value:
+                       return match_value.split("/")[0]
+            return match_value
+
+        def normalize_match_fields_format(match_fields):
+            return {field: normalize_match_value_format(value)
+                    for field, value in match_fields.items()}
+
+
         flowdump = os.path.join(self.tmpdir, 'flowdump-%s.txt' % dpid)
         match = to_old_match(match)
         match_set = None
@@ -768,7 +782,7 @@ dbs:
                             if flow_dict['actions']:
                                 continue
                     if match is not None:
-                        flow_match_set = frozenset(flow_dict['match'].items())
+                        flow_match_set = frozenset(normalize_match_fields_format(flow_dict['match']).items())
                         if match_exact:
                             if match_set != flow_match_set:
                                 continue
